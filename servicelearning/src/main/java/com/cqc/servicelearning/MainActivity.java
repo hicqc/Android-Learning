@@ -22,24 +22,6 @@ public class MainActivity extends AppCompatActivity {
     private Button btncancel;
     private Button btnstatus;
 
-    //保持所启动的Service的IBinder对象,同时定义一个ServiceConnection对象
-    TestService2.MyBinder binder;
-    private ServiceConnection conn = new ServiceConnection() {
-
-        //Activity与Service断开连接时回调该方法
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            System.out.println("------Service DisConnected-------");
-        }
-
-        //Activity与Service连接成功时回调该方法
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            System.out.println("------Service Connected-------");
-            binder = (TestService2.MyBinder) service;
-        }
-    };
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.i(TAG,"onCreate() enter");
@@ -51,6 +33,28 @@ public class MainActivity extends AppCompatActivity {
         testBindService();
     }
 
+    //保持所启动的Service的IBinder对象,同时定义一个ServiceConnection对象
+    TestService2.MyBinder binder; //客户端对Service操作的一个对象（规定好的数据结构？）
+    private ServiceConnection serviceConnection = new ServiceConnection() {
+
+        //Activity与Service断开连接时回调该方法
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            Log.i(TAG,"------Service DisConnected-------");
+            System.out.println("------Service DisConnected-------");
+        }
+
+        //Activity与Service连接成功时回调该方法
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.i(TAG,"------Service Connected-------");
+            System.out.println("------Service Connected-------");
+            binder = (TestService2.MyBinder) service; //初始化binder对象,service是onBinder返回的
+        }
+    };
+
+
+
     private void testBindService() {
 
         btnbind = findViewById(R.id.button_bind);
@@ -58,11 +62,13 @@ public class MainActivity extends AppCompatActivity {
         btnstatus  = findViewById(R.id.button_getstatus);
         final Intent intent = new Intent();
         intent.setAction("com.jay.example.service.TEST_SERVICE2");
+        intent.setPackage(getPackageName());
+
         btnbind.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //绑定service
-                bindService(intent, conn, Service.BIND_AUTO_CREATE);
+                bindService(intent, serviceConnection, Service.BIND_AUTO_CREATE);
             }
         });
 
@@ -70,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 //解除service绑定
-                unbindService(conn);
+                unbindService(serviceConnection);
             }
         });
 
